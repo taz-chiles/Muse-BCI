@@ -1,8 +1,6 @@
 import pygame
 import random
 
-
-
 class Game():
     def __init__(self):
         pygame.init()
@@ -16,6 +14,8 @@ class Game():
         self.BLACK = (0, 0, 0)
         self.WHITE = (255, 255, 255)
         self.RED = (255, 0 , 0)
+        self.YELLOW = (255, 255, 100)
+        self.BLUE = (0, 0, 255)
 
         #Initialise window
         self.screen = pygame.display.set_mode((self.DISPLAY_W, self.DISPLAY_H))
@@ -34,6 +34,8 @@ class Game():
                 "YZ1234",
                 "56789_"]
 
+        self.phrase = [""]
+
         self.lines = len(self.grid)
         self.columns = len(self.grid[0])
 
@@ -48,15 +50,17 @@ class Game():
         self.clock = pygame.time.Clock()
         self.FPS = 2  # 2 FPS should give us epochs of 500 ms
 
-        self.waittime = 3000
+        self.waittime = 1000
+        self.interval = 50
+        self.timer_interval = 1000
+        self.timer_event = pygame.USEREVENT + 1
 
         self.numtrials = 0
         self.targets = [[1, 1], [3, 5], [1, 0], [2, 2], [3, 1], [4, 0], [6, 5]]
         self.targetcounter = 0
 
-        self.face_img = pygame.image.load('barack-face.jpg')
+        self.face_img = pygame.transform.scale(pygame.image.load('barack-face.jpg').convert_alpha(), (50, 50))
 
-    #Write the letters on the screen
     def write(self, text, colour):
         myfont = pygame.font.SysFont("Courier", 90)
         mytext = myfont.render(text, True, colour)
@@ -67,16 +71,21 @@ class Game():
     def make_grid(self):
         for y in range(self.lines):
             for x in range(self.columns):
-                textsurface = self.write(self.grid[y][x], self.WHITE    )
-                self.background.blit(textsurface, (self.length * x + self.length / 4, self.height * (y - 1) + self.height / 4))
+                textsurface = self.write(self.grid[y][x], self.BLUE)
+                self.background.blit(textsurface, self.set_position(x, y))
+        #self.writePhrase()
         self.screen.blit(self.background, (0, 0))
         pygame.display.flip()
 
     def draw_face(self, x, y):
         self.screen.blit(self.face_img, (x,y))
+        pygame.display.flip()
 
+    def writePhrase(self):
+        for z in range(len(self.phrase)):
+            textsurface = self.write(self.phrase[z], self.WHITE)
+            self.background.blit(textsurface, (self.length * z + self.length/4, self.height * 5 + self.height/4))
 
-    # generate a coloured random coloured column or row
     def highlight(self, target, oldhighlight = 0):
         self.row_or_col = random.randint(0, 1)  # determines whether to highlight a row or column
         if self.row_or_col == 0:
@@ -96,20 +105,21 @@ class Game():
             for x in range(self.columns):
                 if self.row_or_col == 0:  # highlight a row
                     if y == self.highlighted:
-                        textsurface = self.write(self.grid[y][x], (255, 255, 100))
-                        self.background.blit(textsurface, (self.set_position(x, y)))
+                        self.screen.blit(self.face_img, self.set_position(x, y))
+                        '''textsurface = self.write(self.grid[y][x], self.YELLOW)
+                        self.background.blit(textsurface, (self.set_position(x, y)))'''
                     else:
-                        textsurface = self.write(self.grid[y][x])
+                        textsurface = self.write(self.grid[y][x], self.BLUE)
                         self.background.blit(textsurface, (self.set_position(x, y)))
                 else:  # highlight a column
                     if x == self.highlighted:
-                        textsurface = self.write(self.grid[y][x], (255, 255, 100))
-                        self.background.blit(textsurface, (self.set_position(x, y)))
+                        self.screen.blit(self.face_img, self.set_position(x, y))
+                        '''textsurface = self.write(self.grid[y][x], self.YELLOW)
+                        self.background.blit(textsurface, (self.set_position(x, y)))'''
                     else:
-                        textsurface = self.write(self.grid[y][x])
+                        textsurface = self.write(self.grid[y][x], self.BLUE)
                         self.background.blit(textsurface, (self.set_position(x, y)))
-
-        #writePhrase()
+            #self.writePhrase()
 
         # record on the parallel port; test to see if row is the same as target
         if self.row_or_col == 0:  # if it is a row
@@ -148,14 +158,15 @@ class Game():
     def set_position(self, x, y):
         return self.length * x + self.length / 4, self.height * (y - 1) + self.height / 4
 
-    def makeTarget(self, target):
+    def make_target(self, target):
         for y in range(self.lines):
             for x in range(self.columns):
                 if y == target[0] and x == target[1]:
                     textsurface = self.write(self.grid[y][x], self.RED)
                     self.background.blit(textsurface, (self.set_position(x, y)))
+                    self.phrase += self.grid[y][x]
                 else:
-                    textsurface = self.write(self.grid[y][x], self.WHITE)
+                    textsurface = self.write(self.grid[y][x], self.BLUE)
                     self.background.blit(textsurface, (self.set_position(x, y)))
 
     def reset_keys(self):
@@ -177,22 +188,23 @@ class Game():
 
             if self.targetcounter < 6:
                 if self.numtrials == 0:
-                    # self.makeTarget(self.targets[self.targetcounter])
+                    self.make_target(self.targets[self.targetcounter])
                     self.screen.blit(self.background, (0, 0))  # clean whole screen
                     pygame.display.flip()
-                    #pygame.time.wait(self.waittime)
+                    pygame.event.pump()
+                    pygame.time.wait(self.waittime)
                     self.numtrials += 1
                 elif self.numtrials == 121:
                     self.targetcounter += 1
                     self.numtrials = 0
                 else:
-                    #self.make_grid()
-                    #self.draw_face(0,0)
-                    #self.highlight(self.targets[self.targetcounter], self.last_highlight)
-                    #pygame.time.wait(self.waittime)
-
-                    self.screen.blit(self.background, (0, 0))  # clean whole screen
+                    self.make_grid()
+                    # self.draw_face(0,0)
+                    self.highlight(self.targets[self.targetcounter], self.last_highlight)
+                    self.screen.blit(self.background, (0, 0))
                     pygame.display.flip()
+                    pygame.event.pump()
+                    pygame.time.wait(self.interval)
                     self.numtrials += 1
 
             else:
