@@ -15,6 +15,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+from sklearn.utils import resample
 
 from mne.decoding import Vectorizer
 
@@ -26,10 +27,9 @@ from mne import Epochs,find_events
 
 # Define some variables
 board_name = 'muse2016'
-# board_name = 'cyton'
 experiment = 'visual_n170'
 session = 999
-subject = 999 # a 'very British number'
+subject = 999 
 record_duration=120
 
 # Initiate EEG device
@@ -45,7 +45,6 @@ n170.present(duration=record_duration, eeg=eeg_device, save_fn=save_fn)
 
 eegnb_data_path = os.path.join('~/','.eegnb', 'data')
 n170_data_path = os.path.join('visual_n170','local', 'muse2016','subject0999','session999','recording_2022-02-04-21.41.20.csv')
-#n170_data_path = os.path.join('visual_n170','local', 'muse2016','subject0999','session999','recording_2022-02-04-21.41.20.csv')
 
 fetch_dataset(data_dir=n170_data_path, experiment='visual-N170', site='eegnb_examples')
 
@@ -57,14 +56,14 @@ raw = load_data(subject,session,
                 experiment='visual-N170', site='eegnb_examples', device_name='muse2016',
                 data_dir = n170_data_path)
 
-# Plot PSD
+# Plot PSD 
 raw.plot_psd()
 
 # Apply bandpass filter and plot again 
 raw.filter(1,30, method='iir')
 raw.plot_psd(fmin=1, fmax=120);
 
-#inline is not interactive, use matplotlib notebook for an interactive plot
+# Inline is not interactive, use matplotlib notebook for an interactive plot
 %matplotlib inline 
 raw.plot(n_channels=16, scalings=dict(eeg=.0001), duration=30, title='Raw EEG');
 
@@ -94,13 +93,13 @@ fig, ax = plot_conditions(epochs, conditions=conditions,
 %matplotlib inline
 epochs.average().plot(spatial_colors=True);
 
-# EVENT PROCESSING 
+# Find events (face, house) and plot them
 
 %matplotlib inline
 events = mne.find_events(raw, 'stim') 
 fig = mne.viz.plot_events(events, raw.info['sfreq'], event_id=event_id);
 
-# RUN ICA TO CORRECT EYE MOVEMENTS
+# Run ICA to correct eye movements
 
 n_components = .99
 
@@ -117,7 +116,7 @@ ica.plot_components(picks=None, ch_type='eeg');
 
 # Should then remove any artifacts manually however won't do that this time. But for future reference
 
-# ESTIMATING EVOKED RESPONSES
+# ESTIMATING EVOKED RESPONSES 
 
 # Take an average of the epochs, then plot the average of the different events on top of each other.
 house_evokeds = epochs['House'].average()
@@ -141,20 +140,18 @@ new_epochs = epochs
 
 # Get the data into the right format - first need to downsample (maybe)
 
-from sklearn.utils import resample
-
-#produces a list of individual epochs
+# Create a list of individual epochs
 nontarget_downsampled = resample(new_epochs['House'], 
                                  replace=False,    # sample without replacement
                                  n_samples=104,     # to match minority class
                                  random_state=123) # reproducible results
 
-#concatenate them into nontargets
+# Concatenate them into nontargets
 nontarget_downsampled = mne.concatenate_epochs(nontarget_downsampled)
 
 targets = new_epochs['Face']
 
-#concatenate to downsized sample
+# Concatenate to downsized sample
 epochs_downsampled = mne.concatenate_epochs([targets, nontarget_downsampled])
 
 downsized_labels = epochs_downsampled.events[:, -1]
