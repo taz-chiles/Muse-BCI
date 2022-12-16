@@ -32,7 +32,7 @@ session = 999
 subject = 999 
 record_duration=120
 
-# Initiate EEG device
+# Initiate EEG device - need to use Bluemuse for this NOT Petal Metrics
 eeg_device = EEG(device=board_name)
 
 # Create output filename
@@ -43,8 +43,9 @@ n170.present(duration=record_duration, eeg=eeg_device, save_fn=save_fn)
 
 # Practice loading an example N170 dataset then try and load the dataset that I saved. 
 
-eegnb_data_path = os.path.join('~/','.eegnb', 'data')
-n170_data_path = os.path.join('visual_n170','local', 'muse2016','subject0999','session999','recording_2022-02-04-21.41.20.csv')
+# eegnb_data_path = os.path.join('~/','.eegnb', 'data')
+
+n170_data_path = os.path.join('data','session001', 'recording_2022-12-16-17.23.35.csv')
 
 fetch_dataset(data_dir=n170_data_path, experiment='visual-N170', site='eegnb_examples')
 
@@ -64,8 +65,8 @@ raw.filter(1,30, method='iir')
 raw.plot_psd(fmin=1, fmax=120);
 
 # Inline is not interactive, use matplotlib notebook for an interactive plot
-%matplotlib inline 
-raw.plot(n_channels=16, scalings=dict(eeg=.0001), duration=30, title='Raw EEG');
+'''%matplotlib inline 
+raw.plot(n_channels=16, scalings=dict(eeg=.0001), duration=30, title='Raw EEG');'''
 
 # Create an array containing the timestamps and type of each stimulus (i.e. face or house)
 events = find_events(raw)
@@ -90,14 +91,14 @@ fig, ax = plot_conditions(epochs, conditions=conditions,
 
 
 # Can also plot an average of all epochs for all channels in a nicer looking graph with matplotlib 
-%matplotlib inline
-epochs.average().plot(spatial_colors=True);
+'''%matplotlib inline
+epochs.average().plot(spatial_colors=True);'''
 
 # Find events (face, house) and plot them
 
-%matplotlib inline
+'''%matplotlib inline
 events = mne.find_events(raw, 'stim') 
-fig = mne.viz.plot_events(events, raw.info['sfreq'], event_id=event_id);
+fig = mne.viz.plot_events(events, raw.info['sfreq'], event_id=event_id);'''
 
 # Run ICA to correct eye movements
 
